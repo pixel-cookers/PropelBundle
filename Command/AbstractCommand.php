@@ -76,7 +76,24 @@ abstract class AbstractCommand extends ContainerAwareCommand
      */
     protected function getPackagePrefix(Bundle $bundle, $baseDirectory = '')
     {
-        $parts  = explode(DIRECTORY_SEPARATOR, realpath($bundle->getPath()));
+        $path = realpath($bundle->getPath());
+        if ('' !== $baseDirectory && false === strpos($path, $baseDirectory)) {
+            $baseDirectory = DIRECTORY_SEPARATOR . $baseDirectory;
+            // the real path is not in the basedirector we try to find it
+            $parts  = explode(DIRECTORY_SEPARATOR, $path);
+            while (false === realpath($customPath = $baseDirectory . DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, array_slice($parts, 1)))) {
+                $parts = array_slice($parts, 1);
+                if (0 == count($parts)) {
+                    break;
+                }
+            }
+            if (realpath($customPath) == $path) {
+                $path = ltrim($customPath, DIRECTORY_SEPARATOR);
+            }
+            $baseDirectory = ltrim($baseDirectory, DIRECTORY_SEPARATOR);
+        }
+
+        $parts  = explode(DIRECTORY_SEPARATOR, $path);
         $length = count(explode('\\', $bundle->getNamespace())) * (-1);
 
         $prefix = implode(DIRECTORY_SEPARATOR, array_slice($parts, 0, $length));
